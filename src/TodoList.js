@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import TodoItem from './TodoItem.js';
+import TodoForm from './TodoForm.js';
 import './TodoList.css';
 const API_URL='/api/todos';
 
@@ -9,6 +10,8 @@ class TodoList extends Component {
         this.state = {
             todos: []
         };
+
+        this.addTodo = this.addTodo.bind(this);
     }
 
     componentWillMount() {
@@ -34,6 +37,38 @@ class TodoList extends Component {
         .then(todos => this.setState({todos}));
     }
 
+    addTodo(newName) {
+        fetch(API_URL, {
+            method: "post",
+            headers: new Headers({
+                'Content-Type': 'application/json'
+            }),
+            body: JSON.stringify({name: newName})
+        })
+        .then(resp => {
+            if(!resp.ok) {
+                if(resp.status >= 400 && resp.status < 500) {
+                    return resp.json().then(data => {
+                        let err = {errorMessge: data.message};
+                        throw err;
+                    })
+                } else {
+                    let err = {errorMessage: "Please try again later. There is something wrong with the server..."}
+                    throw err;
+                }
+            }
+            return resp.json();
+        })
+        .then(newTodo => {
+            this.setState({
+                todos: [
+                    ...this.state.todos, 
+                    newTodo
+                ]
+            });
+        }); 
+    }
+
     render() {
         const {todos} = this.state;
         const todoItems = todos.map(todo => (
@@ -46,6 +81,9 @@ class TodoList extends Component {
         return (
             <div className="todoList">
                 <h1> react:Todo App </h1>
+                <TodoForm 
+                    addTodo={this.addTodo}
+                />
                 <ul> {todoItems} </ul>
             </div>
         )
