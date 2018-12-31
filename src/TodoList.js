@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
-import TodoItem from './TodoItem.js';
-import TodoForm from './TodoForm.js';
+import TodoItem from './TodoItem';
+import TodoForm from './TodoForm';
 import './TodoList.css';
-const API_URL='/api/todos/';
+import * as apiCalls from './api';
 
 class TodoList extends Component {
     constructor (props) {
@@ -18,117 +18,39 @@ class TodoList extends Component {
         this.loadTodos();
     }
 
-    loadTodos() {
-        fetch(API_URL)
-        .then(resp => {
-            if(!resp.ok) {
-                if(resp.status >= 400 && resp.status < 500) {
-                    return resp.json().then(data => {
-                        let err = {errorMessge: data.message};
-                        throw err;
-                    })
-                } else {
-                    let err = {errorMessage: "Please try again later. There is something wrong with the server..."}
-                    throw err;
-                }
-            }
-            return resp.json();
-        })
-        .then(todos => this.setState({todos}));
+    async loadTodos() {
+        let todos = await apiCalls.getTodos();
+        this.setState({todos});
     }
 
-    addTodo(newName) {
-        fetch(API_URL, {
-            method: "post",
-            headers: new Headers({
-                'Content-Type': 'application/json'
-            }),
-            body: JSON.stringify({name: newName})
-        })
-        .then(resp => {
-            if(!resp.ok) {
-                if(resp.status >= 400 && resp.status < 500) {
-                    return resp.json().then(data => {
-                        let err = {errorMessge: data.message};
-                        throw err;
-                    })
-                } else {
-                    let err = {errorMessage: "Please try again later. There is something wrong with the server..."}
-                    throw err;
-                }
-            }
-            return resp.json();
-        })
-        .then(newTodo => {
-            this.setState({
-                todos: [
-                    ...this.state.todos, 
-                    newTodo
-                ]
-            });
-        }); 
+    async addTodo(newName) {
+        let newTodo = await apiCalls.createTodo(newName);
+        this.setState({
+            todos: [
+                ...this.state.todos, 
+                newTodo
+            ]
+        });
     }
 
-    deleteTodo(id) {
-        fetch(`${API_URL}${id}`, {
-            method: "delete",
-        })
-        .then(resp => {
-            if(!resp.ok) {
-                if(resp.status >= 400 && resp.status < 500) {
-                    return resp.json().then(data => {
-                        let err = {errorMessge: data.message};
-                        throw err;
-                    })
-                } else {
-                    let err = {errorMessage: "Please try again later. There is something wrong with the server..."}
-                    throw err;
-                }
-            }
-            return resp.json();
-        })
-        .then(() => {
-            const todos = this.state.todos.filter(t => (
-                t._id !== id
-            ));
-            this.setState({todos});
-        }); 
+    async deleteTodo(id) {
+        await apiCalls.deleteTodo(id);
+        const todos = this.state.todos.filter(t => (
+            t._id !== id
+        ));
+        this.setState({todos});
     }
 
-    toggleTodo(todo) {
-        fetch(`${API_URL}${todo._id}`, {
-            method: "put",
-            headers: new Headers({
-                'Content-Type': 'application/json'
-            }),
-            body: JSON.stringify({
-                completed: ! todo.completed
-            })
-        })
-        .then(resp => {
-            if(!resp.ok) {
-                if(resp.status >= 400 && resp.status < 500) {
-                    return resp.json().then(data => {
-                        let err = {errorMessge: data.message};
-                        throw err;
-                    })
-                } else {
-                    let err = {errorMessage: "Please try again later. There is something wrong with the server..."}
-                    throw err;
-                }
+    async toggleTodo(todo) {
+        await apiCalls.updateTodo(todo);
+        const todos = this.state.todos.map(t => (
+            t._id !== todo._id ? t :
+            {
+                ...t,
+                completed: ! t.completed
             }
-            return resp.json();
-        })
-        .then(() => {
-            const todos = this.state.todos.map(t => (
-                t._id !== todo._id ? t :
-                {
-                    ...t,
-                    completed: ! t.completed
-                }
-            ));
-            this.setState({todos});
-        }); 
+        ));
+        this.setState({todos});
     }
 
     render() {
