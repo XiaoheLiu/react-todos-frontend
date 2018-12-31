@@ -22,14 +22,16 @@ class TodoForm extends Component {
 
     render() {
         return (
-            <form>
+            <form className="todoForm">
                 <input 
                     type="text" 
                     value={this.state.inputValue}
-                    onChange={this.handleChange} 
+                    onChange={this.handleChange}
+                    id="todoInput" 
+                    placeholder="What's your focus today?"
                 />
                 <button onClick={this.handleSubmit}>
-                    Add Todo
+                    + Todo
                 </button>
             </form>
         );
